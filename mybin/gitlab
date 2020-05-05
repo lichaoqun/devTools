@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if [  $1x == "-q"x  ]; then
+    open http://git.qietv.work/QG/qieios/merge_requests/new
+elif [  $1x == "-p"x  ]; then
+    open http://git.qietv.work/search?utf8=%E2%9C%93
+else
+    echo "-q : 企鹅体育 . -p pod"
+fi

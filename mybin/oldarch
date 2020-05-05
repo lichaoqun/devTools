@@ -1,0 +1,54 @@
+#!/bin/bash
+DIR="$(pwd)"
+NOW=`date +%m-%d_%H:%M`
+Desktop="$(cd ~/Desktop && pwd)"
+
+echo $DIR;
+echo $NOW;
+echo $Desktop;
+
+function run {
+	echo "Executing command: $@"
+	$@
+	if [[ $? != "0" ]]; then
+		echo "Executing the above command has failed!"
+		exit 1
+	fi
+}
+
+function run_at {
+	pushd $1
+	shift
+	run $@
+	popd
+}
+
+echo "================== (create ipa file...) =================="
+
+# 删除已经存在的 Payload 文件夹
+run "rm -rf ${DIR}/Target.ipa ${DIR}/Payload"
+
+# 创建 Payload 文件夹
+run "mkdir ${DIR}/Payload"
+
+# 获取文件路径
+APP=$(find ${DIR} -type d | grep ".app$" | head -n 1)
+
+# 把 APP 拷贝到 Payload 文件夹下
+run "cp -rf ${APP} ${DIR}/Payload"
+
+# 把 Payload 压缩 并命名为 Target.ipa 
+run_at ${DIR} "zip -qr Target.ipa Payload"
+
+# 删除 Payload 文件夹
+run "rm -rf ${DIR}/Payload"
+
+# 如果桌面不存在 ipa 的文件夹 则创建一个
+mkdir -p "$Desktop/ipa"
+
+# 移动到桌面的 ipa 文件夹中
+mv -f "${DIR}/Target.ipa"  "$Desktop/ipa/Target_$NOW.ipa"
+
+echo "================== ( 🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉🎉 ) =================="
+
+exit;

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cd ~/mybin
+python tcprelay.py -t 22:10010 1314:1314

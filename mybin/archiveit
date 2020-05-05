@@ -1,0 +1,71 @@
+#!/bin/bash
+var=""
+var1=""
+timeInterval=0			#时间间隔
+tempTime=`date +%s`		#当前时间戳
+fimeName=""				#临时文件名
+filePath=$HOME/Desktop/ipa/Payload
+NOW=`date +%m-%d_%H:%M`
+
+
+#-------------------寻找项目路径-------------------
+cd ~
+macName=${HOME##*/}
+macName=/Users/$macName/Library/Developer/Xcode/DerivedData
+
+cd $macName
+
+# read -p "请输入打包项目名(区分大小写):" var
+
+var=$QEZB-
+for file in *; do
+
+	if [[ $file =~ $var ]]; then
+
+		#文件去重 当前时间-文件修改时间
+		modifyTime=`stat -f %c $file`
+		currentTime=`date +%s`
+		timeInterval=$((currentTime-modifyTime))
+		if [[ $tempTime -gt $timeInterval ]]; then
+		fimeName=$file
+		tempTime=$timeInterval
+		fi
+	fi
+done
+
+macName=$macName/$fimeName/Build/Products
+
+cd ~
+cd $macName
+
+if [[ -d "Debug-iphoneos" ]]; then
+	macName=$macName/Debug-iphoneos
+	cd $macName
+else
+	echo "$macName"
+	echo
+ 	echo "路径出错,请检查路径"
+	exit 1
+fi
+
+
+#-------------------生成IPA文件-------------------
+mkdir $filePath
+cp -R QEZB.app $filePath
+
+cd $filePath
+cd ..
+
+zip -r Payload.zip Payload
+mv Payload.zip Target_$NOW.ipa
+
+#删除Payload.zip  QEZB.app
+rm -rf Payload
+
+
+echo "-------------$objc pack success!!-----------------"
+
+exit 0
+
+
+
