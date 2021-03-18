@@ -96,6 +96,28 @@ pushToGit() {
 	git tag ${podspecfileVersion}
 	git push --tags
 	echo "============= 组件 git push 成功 ========="
+
+	# - 合并spec中的代码
+	cd ~/.cocoapods/repos/QIESpecs
+	allRemoteArray=`git remote`
+	for element in ${allRemoteArray[@]}
+	do
+		remotePushUrl=`git remote get-url --push ${element}`
+	    if [[ $remotePushUrl == *$gitCenterUserName* ]]; then
+    		gitCenterUserAliasName=$element
+    	else
+			gitCurrentUserAliasName=$element
+		fi
+	done
+	git fetch ${gitCenterUserAliasName}
+	git merge ${gitCenterUserAliasName}/master
+	
+	# 如果出错，自动退出
+	if [ $? -ne 0 ]; then
+	 echo "error: merge 失败"; 
+	 exit; 
+	fi
+	echo "============= spec merge 成功 ========="
 }
 pushToGit
 
@@ -129,18 +151,6 @@ podPush
 modifyUserNameInCocoapodsFolder() {
 	# - specs中的git
 	cd ~/.cocoapods/repos/QIESpecs/${componentName}/${podspecfileVersion}
-	allRemoteArray=`git remote`
-	for element in ${allRemoteArray[@]}
-	do
-		remotePushUrl=`git remote get-url --push ${element}`
-		userName=${remotePushUrl%/*}
-		userName=${userName#*:}
-	    if [[ $remotePushUrl == *$gitCenterUserName* ]]; then
-    		gitCenterUserAliasName=$element
-    	else
-			gitCurrentUserAliasName=$element
-		fi
-	done
 
 	# - 获取s.source所在的的行数,并修改为对应的用户名
 	sourceLineNumber=`grep -nE 's.source.*=>' ${podspecFileName} | cut -d : -f1`
@@ -158,27 +168,16 @@ modifyUserNameInCocoapodsFolder() {
 	git add .
 	git commit -am "修改配置文件，将git地址改为ios_liuwei，组件${componentName} 的版本号为: ${podspecfileVersion}"
 
-	git fetch ${gitCenterUserAliasName}
-	git merge ${gitCenterUserAliasName}/master
-	# 如果出错，自动退出
-	if [ $? -ne 0 ]; then
-	 echo "error: merge 失败"; 
-	 exit; 
-	fi
-
-	git push ${gitCurrentUserAliasName}
-	echo "============= spec git push 成功 ========="
+	git push
 	git reset --hard HEAD~1
+	echo "============= spec git push 成功 ========="
+
 }
 modifyUserNameInCocoapodsFolder
 
 # 8. 打开浏览器
-openChrom(){
+openChrome(){
 	open "http://git.qi-e.tv/${gitCurrentUserName}/${componentName}/merge_requests/new"
 	open "http://git.qi-e.tv/${gitCurrentUserName}/QIESpecs/merge_requests/new"
 }
-openChrom
-
-
-
-
+openChrome
