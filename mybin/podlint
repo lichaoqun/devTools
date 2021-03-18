@@ -6,7 +6,7 @@ podspecfileVersion=""
 
 # git 中心仓库和自己的仓库的名称和用户名
 gitCenterUserName=""
-gitCenteUserAliasName=""
+gitCenterUserAliasName=""
 
 gitCurrentUserName=""
 gitCurrentUserAliasName=""
@@ -21,14 +21,13 @@ init(){
 	# git remote的别名和用户名
 	gitCenterUserName="ios_liuwei"
 	allRemoteArray=`git remote`
-	gitCenterAliasName=""
 	for element in ${allRemoteArray[@]}
 	do
 		remotePushUrl=`git remote get-url --push ${element}`
 		userName=${remotePushUrl%/*}
 		userName=${userName#*:}
 	    if [[ $remotePushUrl == *$gitCenterUserName* ]]; then
-    		gitCenteUserAliasName=$element
+    		gitCenterUserAliasName=$element
     	else
 			gitCurrentUserAliasName=$element
 			gitCurrentUserName=$userName
@@ -96,14 +95,14 @@ pushToGit() {
 
 	git tag ${podspecfileVersion}
 	git push --tags
-	echo "============= git push 成功 ========="
+	echo "============= 组件 git push 成功 ========="
 }
 pushToGit
 
 # 5. 验证组件
 podLint() {
 	echo "podlint=============开始验证组件========="
-	pod lib lint  --sources='http://git.qietv.work/ios_liuwei/QIESpecs.git,http://git.qietv.work/liuwei/QIESpecs.git,http://git.qietv.work/zhangcihang/QIESpecs.git,http://git.qietv.work/zhouxingyu/QIESpecs.git,http://git.qietv.work/lixiao02/QIESpecs.git,http://git.qietv.work/TANX/QIESpecs.git,http://git.qietv.work/qg/QIESpecs.git,http://git.qietv.work/liuyanchi/QIESpecs.git,https://github.com/CocoaPods/Specs,http://repo.baichuan-ios.taobao.com/baichuanSDK/AliBCSpecs.git' --verbose --allow-warnings --use-libraries --skip-import-validation
+	pod spec lint  --sources='http://git.qietv.work/ios_liuwei/QIESpecs.git,http://git.qietv.work/liuwei/QIESpecs.git,http://git.qietv.work/zhangcihang/QIESpecs.git,http://git.qietv.work/zhouxingyu/QIESpecs.git,http://git.qietv.work/lixiao02/QIESpecs.git,http://git.qietv.work/TANX/QIESpecs.git,http://git.qietv.work/qg/QIESpecs.git,http://git.qietv.work/liuyanchi/QIESpecs.git,https://github.com/CocoaPods/Specs,http://repo.baichuan-ios.taobao.com/baichuanSDK/AliBCSpecs.git' --verbose --allow-warnings --use-libraries --skip-import-validation
 	# 如果出错，自动退出
 	if [ $? -ne 0 ]; then 
 		echo "error: 组件验证失败，请检查错误"; 
@@ -113,7 +112,7 @@ podLint() {
 }
 podLint
 
-# 6. 验证组件
+# 6. 推送组件
 podPush() {
 	echo "===================开始推送组件===================="
 	pod repo push QIESpecs ${podspecFileName} --verbose --allow-warnings --use-libraries --skip-import-validation
@@ -128,12 +127,25 @@ podPush
 
 # 7. 修改cocoapods中的spece中的username
 modifyUserNameInCocoapodsFolder() {
-	cd ~/.cocoapods/repos/QIESpecs
+	# - specs中的git
+	cd ~/.cocoapods/repos/QIESpecs/${componentName}/${podspecfileVersion}
+	allRemoteArray=`git remote`
+	for element in ${allRemoteArray[@]}
+	do
+		remotePushUrl=`git remote get-url --push ${element}`
+		userName=${remotePushUrl%/*}
+		userName=${userName#*:}
+	    if [[ $remotePushUrl == *$gitCenterUserName* ]]; then
+    		gitCenterUserAliasName=$element
+    	else
+			gitCurrentUserAliasName=$element
+		fi
+	done
 
 	# - 获取s.source所在的的行数,并修改为对应的用户名
 	sourceLineNumber=`grep -nE 's.source.*=>' ${podspecFileName} | cut -d : -f1`
 	
-	# - 获取到配置文件中的Sour中的用户名
+	# - 获取到配置文件中的Source中的用户名
 	sourceString=`grep -E 's.source.*=>' ${podspecFileName}`
 	sourceString=${sourceString%/*}
 	sourceUserName=${sourceString##*/}
@@ -142,18 +154,20 @@ modifyUserNameInCocoapodsFolder() {
 	sed -i "" "${sourceLineNumber}s/${sourceUserName}/${gitCenterUserName}/g" $podspecFileName
 
 	#提交索引库代码
+	cd ~/.cocoapods/repos/QIESpecs
 	git add .
-	git commit -am "修改配置文件，将git地址改为ios_liuwei，组件${componentName} 的版本号为: ${versionString}"
-	git fetch ${gitCenteUserAliasName}
+	git commit -am "修改配置文件，将git地址改为ios_liuwei，组件${componentName} 的版本号为: ${podspecfileVersion}"
 
+	git fetch ${gitCenterUserAliasName}
+	git merge ${gitCenterUserAliasName}/master
 	# 如果出错，自动退出
 	if [ $? -ne 0 ]; then
-	 echo "error: 中心仓库remote别名获取错误"; 
+	 echo "error: merge 失败"; 
 	 exit; 
 	fi
 
-	git merge ${gitCenteUserAliasName}/master
-	git push
+	git push ${gitCurrentUserAliasName}
+	echo "============= spec git push 成功 ========="
 	git reset --hard HEAD~1
 }
 modifyUserNameInCocoapodsFolder
