@@ -1,0 +1,170 @@
+#!/bin/sh
+
+#提交内容
+componentDirPath=$1
+podspecfileVersion=""
+
+# git 中心仓库和自己的仓库的名称和用户名
+gitCenterUserName=""
+gitCenteUserAliasName=""
+
+gitCurrentUserName=""
+gitCurrentUserAliasName=""
+
+# 1. 获取提交pod和git的基本信息
+init(){
+
+	# 文件夹跳转
+	cd ~
+	cd "${componentDirPath}"
+
+	# git remote的别名和用户名
+	gitCenterUserName="ios_liuwei"
+	allRemoteArray=`git remote`
+	gitCenterAliasName=""
+	for element in ${allRemoteArray[@]}
+	do
+		remotePushUrl=`git remote get-url --push ${element}`
+		userName=${remotePushUrl%/*}
+		userName=${userName#*:}
+	    if [[ $remotePushUrl == *$gitCenterUserName* ]]; then
+    		gitCenteUserAliasName=$element
+    	else
+			gitCurrentUserAliasName=$element
+			gitCurrentUserName=$userName
+		fi
+	done
+
+	# 组件和配置文件的路径和名称和版本
+	componentName=${componentDirPath##*/}
+	podspecFileName="${componentName}.podspec"
+	podspecfileVersion=`grep -E 's.version.*= ' ${podspecFileName}`
+	podspecfileVersion=`sed -n "s/^.*'\(.*\)'.*$/\1/ p" <<< ${podspecfileVersion}`
+}
+init
+
+# 2. 修改组件内的spec文件的user名称
+modifyUserNameInComponentFolder() {
+	# - 获取s.source所在的的行数,并修改为对应的用户名
+	sourceLineNumber=`grep -nE 's.source.*=>' ${podspecFileName} | cut -d : -f1`
+	
+	# - 获取到配置文件中的Sour中的用户名
+	sourceString=`grep -E 's.source.*=>' ${podspecFileName}`
+	sourceString=${sourceString%/*}
+	sourceUserName=${sourceString##*/}
+
+	# - 修改用户名
+	sed -i "" "${sourceLineNumber}s/${sourceUserName}/${gitCurrentUserName}/g" $podspecFileName
+}
+modifyUserNameInComponentFolder
+
+
+# 3. 判断version是否合理, 如果不合理则提示重置版本号
+resetTag() {
+	read -p "版本号${podspecfileVersion} 已存在，是否删除此tag，重新设置:(y/n)?" confirmeToResetTag
+	if [ "$confirmeToResetTag" == "y" -o "$confirmeToResetTag" == "Y" -o "$confirmeToResetTag" == "$c" ]; then
+		git tag -d $podspecfileVersion
+		git push ${gitCurrentUserAliasName} :refs/tags/${podspecfileVersion}
+		echo "============= 删除本地和远端的tag成功 ========="
+
+	else
+		exit;
+	fi
+}
+checkTag() {
+	# git上最新的版本号
+	alltags=`git tag`
+
+	# 如果git中的版本号包含specs中的版本号, 则重置版本号, 否则提交.
+	if [[ $alltags == *$podspecfileVersion* ]]; then
+	    resetTag
+	fi
+}
+checkTag
+
+# 4. 输入commit信息
+pushToGit() {
+	read -p "输入提交内容：" commitString
+
+    if test -z "$commitString"; then
+		commitString="组件${componentName} 的版本号为: ${podspecfileVersion}"
+    fi
+
+    git add .
+	git commit -am "${commitString}"
+	git push
+
+	git tag ${podspecfileVersion}
+	git push --tags
+	echo "============= git push 成功 ========="
+}
+pushToGit
+
+# 5. 验证组件
+podLint() {
+	echo "podlint=============开始验证组件========="
+	pod lib lint  --sources='http://git.qietv.work/ios_liuwei/QIESpecs.git,http://git.qietv.work/liuwei/QIESpecs.git,http://git.qietv.work/zhangcihang/QIESpecs.git,http://git.qietv.work/zhouxingyu/QIESpecs.git,http://git.qietv.work/lixiao02/QIESpecs.git,http://git.qietv.work/TANX/QIESpecs.git,http://git.qietv.work/qg/QIESpecs.git,http://git.qietv.work/liuyanchi/QIESpecs.git,https://github.com/CocoaPods/Specs,http://repo.baichuan-ios.taobao.com/baichuanSDK/AliBCSpecs.git' --verbose --allow-warnings --use-libraries --skip-import-validation
+	# 如果出错，自动退出
+	if [ $? -ne 0 ]; then 
+		echo "error: 组件验证失败，请检查错误"; 
+		exit; 
+	fi
+	echo "===================验证组件成功===================="
+}
+podLint
+
+# 6. 验证组件
+podPush() {
+	echo "===================开始推送组件===================="
+	pod repo push QIESpecs ${podspecFileName} --verbose --allow-warnings --use-libraries --skip-import-validation
+	# 如果出错，自动退出
+	if [ $? -ne 0 ]; then
+	 echo "error: 组件推送失败，请检查错误"; 
+	 exit; 
+	fi
+	echo "===================组件推送完成===================="
+}
+podPush
+
+# 7. 修改cocoapods中的spece中的username
+modifyUserNameInCocoapodsFolder() {
+	cd ~/.cocoapods/repos/QIESpecs
+
+	# - 获取s.source所在的的行数,并修改为对应的用户名
+	sourceLineNumber=`grep -nE 's.source.*=>' ${podspecFileName} | cut -d : -f1`
+	
+	# - 获取到配置文件中的Sour中的用户名
+	sourceString=`grep -E 's.source.*=>' ${podspecFileName}`
+	sourceString=${sourceString%/*}
+	sourceUserName=${sourceString##*/}
+
+	# - 修改用户名
+	sed -i "" "${sourceLineNumber}s/${sourceUserName}/${gitCenterUserName}/g" $podspecFileName
+
+	#提交索引库代码
+	git add .
+	git commit -am "修改配置文件，将git地址改为ios_liuwei，组件${componentName} 的版本号为: ${versionString}"
+	git fetch ${gitCenteUserAliasName}
+
+	# 如果出错，自动退出
+	if [ $? -ne 0 ]; then
+	 echo "error: 中心仓库remote别名获取错误"; 
+	 exit; 
+	fi
+
+	git merge ${gitCenteUserAliasName}/master
+	git push
+	git reset --hard HEAD~1
+}
+modifyUserNameInCocoapodsFolder
+
+# 8. 打开浏览器
+openChrom(){
+	open "http://git.qi-e.tv/${gitCurrentUserName}/${componentName}/merge_requests/new"
+	open "http://git.qi-e.tv/${gitCurrentUserName}/QIESpecs/merge_requests/new"
+}
+openChrom
+
+
+
+
