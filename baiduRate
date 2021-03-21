@@ -1,0 +1,42 @@
+// ==UserScript==
+// @name         百度云加速播放
+// @namespace    http://tampermonkey.net/
+// @version      0.1
+// @description  try to take over the world!
+// @author       You
+// @match        *://pan.baidu.com/*
+// @match        *://yun.baidu.com/*
+// @grant        none
+// ==/UserScript==
+
+(function() {
+    'use strict';
+    window.addEle = function() {
+        var rote = false;
+        var button = document.createElement("input");
+        button.setAttribute("type", "button");
+        button.setAttribute("value", "1.0X");
+        button.style.width = "60px";
+        button.style.align = "center";
+        button.style.marginLeft = "250px";
+        button.style.marginBottom = "10px";
+        button.style.background = "#b46300";
+        button.style.color = "white";
+        button.onclick = function() {
+            rote = !rote;
+            if(rote){
+                button.setAttribute("value", "1.8X");
+                videojs.getPlayers("video-player").html5player.tech_.setPlaybackRate(1.8);
+            }else{
+                videojs.getPlayers("video-player").html5player.tech_.setPlaybackRate(1.0);
+                button.setAttribute("value", "1.0X");
+            }
+        }
+        // var x = document.getElementsByClassName("video-title-left")[0];
+        var x = document.getElementsByClassName("vyQHNyb")[0];
+
+        x.appendChild(button);
+    }
+    window.setTimeout("addEle()", 5000);
+})();
+
