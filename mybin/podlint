@@ -169,8 +169,7 @@ modifyUserNameInCocoapodsFolder() {
 	git add .
 	git commit -am "修改配置文件，将git地址改为ios_liuwei，组件${componentName} 的版本号为: ${podspecfileVersion}"
 
-	git push
-	git reset --hard HEAD~1
+	git push ${gitCurrentUserAliasName}
 	echo "============= spec git push 成功 ========="
 
 }
