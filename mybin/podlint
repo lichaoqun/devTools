@@ -24,8 +24,10 @@ init(){
 	do
 		remotePushUrl=`git remote get-url --push ${element}`
 		userName=${remotePushUrl%/*}
+		userName=${userName#*qietv.work}
 		userName=${userName#*:}
-	    if [[ $remotePushUrl == *$gitCenterUserName* ]]; then
+		userName=${userName#*/}	    
+		if [[ $remotePushUrl == *$gitCenterUserName* ]]; then
     		gitCenterUserAliasName=$element
     	else
 			gitCurrentUserAliasName=$element
