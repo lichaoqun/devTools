@@ -1,5 +1,4 @@
 #!/bin/sh
-
 #提交内容
 componentDirPath=$1
 podspecfileVersion=""
@@ -34,9 +33,17 @@ init(){
 		fi
 	done
 
+	filesArray=`ls`
+	podspecFileName=""
+	for element in ${filesArray[@]}
+	do
+		if [[ $element =~ ".podspec" ]]; then
+			podspecFileName=$element
+		fi
+	done
+
 	# 组件和配置文件的路径和名称和版本
-	componentName=${componentDirPath##*/}
-	podspecFileName="${componentName}.podspec"
+	componentName=${podspecFileName%%.podspec*}
 	podspecfileVersion=`grep -E 's.version.*= ' ${podspecFileName}`
 	podspecfileVersion=`sed -n "s/^.*'\(.*\)'.*$/\1/ p" <<< ${podspecfileVersion}`
 }
@@ -123,7 +130,7 @@ pushToGit
 
 # 5. 验证组件
 podLint() {
-	echo "podlint=============开始验证组件========="
+	echo "=============开始验证组件========="
 	cd "${componentDirPath}"
 	pod spec lint  --sources='http://git.qietv.work/ios_liuwei/QIESpecs.git,http://git.qietv.work/liuwei/QIESpecs.git,http://git.qietv.work/zhangcihang/QIESpecs.git,http://git.qietv.work/zhouxingyu/QIESpecs.git,http://git.qietv.work/lixiao02/QIESpecs.git,http://git.qietv.work/TANX/QIESpecs.git,http://git.qietv.work/qg/QIESpecs.git,http://git.qietv.work/liuyanchi/QIESpecs.git,https://github.com/CocoaPods/Specs,https://github.com/aliyun/aliyun-specs.git,http://repo.baichuan-ios.taobao.com/baichuanSDK/AliBCSpecs.git' --verbose --allow-warnings --use-libraries --skip-import-validation
 	# 如果出错，自动退出
