@@ -100,10 +100,10 @@ pushToGit() {
 
     git add .
 	git commit -am "${commitString}"
-	git push
+	git push ${gitCurrentUserAliasName} master
 
 	git tag ${podspecfileVersion}
-	git push --tags
+	git push ${gitCurrentUserAliasName}  --tags
 	echo "============= 组件 git push 成功 ========="
 
 	# - 合并spec中的代码
@@ -118,8 +118,7 @@ pushToGit() {
 			gitCurrentUserAliasName=$element
 		fi
 	done
-	git fetch ${gitCenterUserAliasName}
-	git merge ${gitCenterUserAliasName}/master
+	git pull ${gitCenterUserAliasName} master
 	
 	# 如果出错，自动退出
 	if [ $? -ne 0 ]; then
@@ -178,7 +177,7 @@ modifyUserNameInCocoapodsFolder() {
 	git add .
 	git commit -am "修改配置文件，将git地址改为ios_liuwei，组件${componentName} 的版本号为: ${podspecfileVersion}"
 
-	git push ${gitCurrentUserAliasName}
+	git push ${gitCurrentUserAliasName} master
 	echo "============= spec git push 成功 ========="
 
 }
