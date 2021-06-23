@@ -20,10 +20,11 @@ pinfo.cols.protocol:set("QIESocket")
 	    local myProtoTree = tree:add(my_protocol, buffer(0, len), "企鹅直播socket协议")
 
 	    myProtoTree:add(dataLen, buffer(offset, 4))
-	    dataLenCurrent = buffer(offset, 4):uint()
+	    curContentLen = buffer(offset, 4):uint()
 	    offset = offset + 4
 
 	    myProtoTree:add(headLen, buffer(offset, 2))
+		curHeaderLen = buffer(offset, 2):uint()
 	    offset = offset + 2
 
 	    myProtoTree:add(version, buffer(offset, 2))
@@ -35,7 +36,7 @@ pinfo.cols.protocol:set("QIESocket")
 	    myProtoTree:add(seqNO, buffer(offset, 4))
 	    offset = offset + 4
 
-	    contentLen = dataLenCurrent - offset;
+	    contentLen = curContentLen - curHeaderLen
 	    myProtoTree:add(content, buffer(offset, contentLen))
 		offset = offset + contentLen
 
