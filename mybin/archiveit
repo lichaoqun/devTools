@@ -4,9 +4,8 @@ var1=""
 timeInterval=0			#时间间隔
 tempTime=`date +%s`		#当前时间戳
 fimeName=""				#临时文件名
-filePath=$HOME/Desktop/ipa/Payload
+filePath=$HOME/Desktop/公司/ipas/dev/Payload
 NOW=`date +%m-%d_%H:%M`
-
 
 #-------------------寻找项目路径-------------------
 cd ~
@@ -48,9 +47,8 @@ else
 	exit 1
 fi
 
-
 #-------------------生成IPA文件-------------------
-mkdir $filePath
+mkdir -p $filePath
 cp -R QEZB.app $filePath
 
 cd $filePath
