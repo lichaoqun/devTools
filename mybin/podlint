@@ -60,12 +60,10 @@ modifyUserNameInComponentFolder() {
 	sourceString=`grep -E 's.source.*=>' ${podspecFileName}`
 	sourceString=${sourceString%/*}
 	sourceUserName=${sourceString##*/}
-
 	# - 修改用户名
 	sed -i "" "${sourceLineNumber}s/${sourceUserName}/${gitCurrentUserName}/g" $podspecFileName
 }
 modifyUserNameInComponentFolder
-
 
 # 3. 判断version是否合理, 如果不合理则提示重置版本号
 resetTag() {
@@ -99,7 +97,7 @@ pushToGit() {
     fi
 
     git add .
-	git commit -am "${commitString}"
+	git commit -am "提交 : ${commitString}, 组件${componentName} 的版本号为: ${podspecfileVersion}"
 	git push ${gitCurrentUserAliasName} master
 
 	git tag ${podspecfileVersion}
@@ -133,7 +131,9 @@ pushToGit
 podLint() {
 	echo "=============开始验证组件========="
 	cd "${componentDirPath}"
-	pod spec lint  --sources='http://git.qietv.work/ios_liuwei/QIESpecs.git,http://git.qietv.work/liuwei/QIESpecs.git,http://git.qietv.work/zhangcihang/QIESpecs.git,http://git.qietv.work/zhouxingyu/QIESpecs.git,http://git.qietv.work/lixiao02/QIESpecs.git,http://git.qietv.work/TANX/QIESpecs.git,http://git.qietv.work/qg/QIESpecs.git,http://git.qietv.work/liuyanchi/QIESpecs.git,https://github.com/CocoaPods/Specs,https://github.com/aliyun/aliyun-specs.git,http://repo.baichuan-ios.taobao.com/baichuanSDK/AliBCSpecs.git' --verbose --allow-warnings --use-libraries --skip-import-validation
+	# pod spec lint  --sources='http://git.qietv.work/ios_liuwei/QIESpecs.git,http://git.qietv.work/liuwei/QIESpecs.git,http://git.qietv.work/zhangcihang/QIESpecs.git,http://git.qietv.work/zhouxingyu/QIESpecs.git,http://git.qietv.work/lixiao02/QIESpecs.git,http://git.qietv.work/TANX/QIESpecs.git,http://git.qietv.work/qg/QIESpecs.git,http://git.qietv.work/liuyanchi/QIESpecs.git,https://github.com/CocoaPods/Specs,https://github.com/aliyun/aliyun-specs.git,http://repo.baichuan-ios.taobao.com/baichuanSDK/AliBCSpecs.git' --verbose --allow-warnings --use-libraries --skip-import-validation
+	pod spec lint  --sources='http://git.qietv.work/ios_liuwei/QIESpecs.git,https://github.com/CocoaPods/Specs,https://github.com/aliyun/aliyun-specs.git,http://repo.baichuan-ios.taobao.com/baichuanSDK/AliBCSpecs.git' --verbose --allow-warnings --use-libraries --skip-import-validation
+
 	# 如果出错，自动退出
 	if [ $? -ne 0 ]; then 
 		echo "error: 组件验证失败，请检查错误"; 
